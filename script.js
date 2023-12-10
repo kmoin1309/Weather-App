@@ -10,7 +10,7 @@ const loadingScreen = document.querySelector(".loading-container");
 const userInfoContainer = document.querySelector(".user-info-container");
 
 
-
+// Setting Default Tab
 let oldTab = userTab;
 const API_KEY = "d1845658f92b31c64bd94f06f7188c9c";
 oldTab.classList.add("current-tab");
@@ -79,9 +79,17 @@ async function fetchUserWeatherInfo(coordinates) {
     renderWeatherInfo(data);
   } catch (err) {
     loadingScreen.classList.remove("active");
+    grantAccessContainer.classList.add("active");
+    apiErrorImg.style.display = "none";
+    apiErrorMessage.innerText = `Error: : ${error?.messsage}`;
+    apiErrorBtn.addEventListener("click", fetchUserWeatherInfo);
 
   }
 }
+
+const apiErrorImg = document.querySelector("[data-notFoundImg]");
+const apiErrorMessage = document.querySelector("[data-apiErrorText]");
+const apiErrorBtn = document.querySelector("[data-apiErrorBtn]");
 
 function renderWeatherInfo(weatherInfo) {
   //fistly, we have to fethc the elements
@@ -110,9 +118,10 @@ function renderWeatherInfo(weatherInfo) {
 
 function getLocation() {
   if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(showPosition);
+    navigator.geolocation.getCurrentPosition(showPosition, showError);
   } else {
-
+    grantAccessButton.style.display = "none";
+    messageText.innerText = "Geolocation is not supported by this Browser.";
   }
 }
 
@@ -125,11 +134,31 @@ function showPosition(position) {
   sessionStorage.setItem("user-coordinates", JSON.stringify(userCoordinates));
   fetchUserWeatherInfo(userCoordinates);
 }
+// Handle any errors
+function showError(error) {
+  switch (error.code) {
+    case error.PERMISSION_DENIED:
+      messageText.innerText = "You denied the request for Geolocation.";
+      break;
+    case error.POSITION_UNAVAILABLE:
+      messageText.innerText = "Location information is unavailable.";
+      break;
+    case error.TIMEOUT:
+      messageText.innerText = "The request to get user location timed out.";
+      break;
+    case error.UNKNOWN_ERROR:
+      messageText.innerText = "An unknown error occurred.";
+      break;
+  }
+}
 
 const grantAccessButton = document.querySelector("[data-grantAccess]");
 grantAccessButton.addEventListener("click", getLocation);
 
 const searchInput = document.querySelector("[data-searchInput]");
+
+
+// Search Weather Handling
 
 searchForm.addEventListener("submit", (e) => {
   e.preventDefault();
@@ -153,5 +182,9 @@ async function fetchSearchWeatherInfo(city) {
     userInfoContainer.classList.add("active");
     renderWeatherInfo(data);
   } catch (err) {
+    loadingScreen.classList.remove("active");
+    grantAccessContainer.classList.add("active");
+    apiErrorMessage.innerText = `${error?.messsage}`;
+    apiErrorBtn.style.display = "none";
   }
 }
